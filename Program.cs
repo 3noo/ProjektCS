@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using ProjecktC.Data;
+using ProjecktC.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,6 +11,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    //options.UseSqlServer(builder.Configuration.GetConnectionString("Default123"));
+
+    options.UseSqlServer("Data Source=ETR\\SQLEXPRESS;Initial Catalog=CompaniesAppDB;Integrated Security=True;Encrypt=False");
+});
+
+//Configure Services
+builder.Services.AddScoped<IBookService, BooksService>();
+builder.Services.AddScoped<ILibraryServices, LibraryService>();
+builder.Services.AddScoped<IMembershipsServices, MembershipsServices>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -15,6 +31,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
 
 app.UseHttpsRedirection();
 

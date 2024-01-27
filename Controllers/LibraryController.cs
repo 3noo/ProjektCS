@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjecktC.Data;
 using ProjecktC.Data.DTOs;
 using ProjecktC.Data.Models;
+using ProjecktC.Services;
 
 namespace ProjecktC.Controllers
 {
@@ -10,82 +11,59 @@ namespace ProjecktC.Controllers
     
     public class LibraryController:ControllerBase
     {
-        [HttpGet]
-        public IActionResult GetAllLibrarys()
+        
+        private ILibraryServices _libraryService;
+        public LibraryController(ILibraryServices libraryService)
         {
-            var LibraryDb = FDB.LibraryDb.ToList();
+            _libraryService = libraryService;
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetAllLibrarys()
+        {
+            var libraryDb = await _libraryService.GetLibrariesAsync();
             
-            return Ok(LibraryDb);
+            return Ok(libraryDb);
         }
         
         
         [HttpGet("{id}")]
-        public IActionResult GetLibraryById(int id)
+        public async Task<IActionResult> GetLibraryById(int id)
         {
-            var LibraryDb = FDB.LibraryDb.FirstOrDefault(x => x.Id == id);
+            var libraryDb = await _libraryService.GetLibraryIdAsync(id);
 
-            if(LibraryDb == null)
+            if(libraryDb == null)
             {
                 return NotFound($"Library with id = {id} not found");
             } 
             else
             {
-                return Ok(LibraryDb);
+                return Ok(libraryDb);
             }
         }
         
         [HttpDelete("Delete/{id}")]
-        public IActionResult DeleteLibraryById(int id)
+        public async Task<IActionResult> DeleteLibraryById(int id)
         {
-            var LibraryDb = FDB.LibraryDb.FirstOrDefault(x => x.Id == id);
-            if(LibraryDb == null)
-            {
-                return NotFound($"Library with id = {id} not found");
-            } 
-            else
-            {
-                FDB.LibraryDb.Remove(LibraryDb);
+            await _libraryService.DeleteLibraryByIdAsync(id);
+            
                 return Ok($"Library with id = {id} was removed");
             }
-        }
+        
+    
         [HttpPost]
-        public IActionResult PostLibrary([FromBody]PostLibraryDto payload)
+        public async Task<IActionResult> PostLibrary([FromBody]PostLibraryDto payload)
         {
-            var newLibrary = new Library()
-            {
-                Id = new Random().Next(10, 100),
-                City = payload.City,
-                OH = payload.OH,
-                CH = payload.CH,
-            };
-
-            FDB.LibraryDb.Add(newLibrary);
+            await _libraryService.PostLibraryAsync(payload);
             
             return Ok("New Book created");
         }
         
         [HttpPut("{id}")]
-        public IActionResult UpdateLibraryById(int id, [FromBody]PutLibraryDto payload)
+        public async Task<IActionResult> UpdateLibraryById(int id, [FromBody]PutLibraryDto payload)
         {
-            var LibraryDb = FDB.LibraryDb.FirstOrDefault(x => x.Id == id);
-
-            if(LibraryDb == null)
-            {
-                return NotFound($"Library with id = {id} not found");
-            } else
-            {
-                LibraryDb.City = payload.City;
-                LibraryDb.OH = payload.OH;
-                LibraryDb.CH = payload.CH;
-                
-
+           await _libraryService.UpdateLibraryAsync(id,payload);
+           
                 return Ok($"Library with id = {id} was updated");
             }
         }
-
-       
-        
-
-
     }
-}

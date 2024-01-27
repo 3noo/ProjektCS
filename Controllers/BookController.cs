@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjecktC.Data;
 using ProjecktC.Data.DTOs;
 using ProjecktC.Data.Models;
+using ProjecktC.Services;
 
 namespace ProjecktC.Controllers
 {
@@ -10,75 +11,56 @@ namespace ProjecktC.Controllers
     
     public class BookController:ControllerBase
     {
-        [HttpGet]
-        public IActionResult GetAllBooks()
+        
+        private IBookService _bookService;
+        public BookController(IBookService bookService)
         {
-            var BooksDb = FDB.BooksDb.ToList();
+            _bookService = bookService;
+        }
 
-            return Ok(BooksDb);
+        [HttpGet]
+        public async Task<IActionResult> GetAllBooks()
+        {
+            var booksDb = await _bookService.GetBooksAsync();
+
+            return Ok(booksDb);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetBooksById(int id)
+        public async Task<IActionResult> GetBooksById(int id)
         {
-            var BooksDb = FDB.BooksDb.FirstOrDefault(x => x.Id == id);
+            var booksDb = await _bookService.GetBookByIdAsync(id);
 
-            if(BooksDb == null)
+            if(booksDb == null)
             {
                 return NotFound($"Book with id = {id} not found");
             } else
             {
-                return Ok(BooksDb);
+                return Ok(booksDb);
             }
         }
         
         [HttpDelete("Delete/{id}")]
-        public IActionResult DeleteBooksById(int id)
+        public async Task<IActionResult> DeleteBooksById(int id)
         {
-            var BooksDb = FDB.BooksDb.FirstOrDefault(x => x.Id == id);
-            if(BooksDb == null)
-            {
-                return NotFound($"Books with id = {id} not found");
-            } 
-            else
-            {
-                FDB.BooksDb.Remove(BooksDb);
-                return Ok($"Books with id = {id} was removed");
-            }
+            await _bookService.DeleteBookByIdAsync(id);
+
+            return Ok("Deleted");
         }        
         [HttpPost]
-        public IActionResult PostBook([FromBody]PostBookDto payload)
+        public async Task<IActionResult> PostBook([FromBody]PostBookDto payload)
         {
-            var newBook = new Books()
-            {
-                Id = new Random().Next(10, 100),
-                Title = payload.Title,
-                Author = payload.Author,
-                Genre = payload.Genre,
-            };
-
-            FDB.BooksDb.Add(newBook);
+            await _bookService.PostBookAsync(payload);
             
             return Ok("New Book created");
         }
         
         [HttpPut("{id}")]
-        public IActionResult UpdateBookById(int id, [FromBody]PutBookDto payload)
-        {
-            var BooksDb = FDB.BooksDb.FirstOrDefault(x => x.Id == id);
-
-            if(BooksDb == null)
-            {
-                return NotFound($"Book with id = {id} not found");
-            } else
-            {
-                BooksDb.Title = payload.Title;
-                BooksDb.Author = payload.Author;
-                BooksDb.Genre = payload.Genre;
-                
-
+        public async Task<IActionResult> UpdateBookById(int id, [FromBody]PutBookDto payload)
+        { 
+            await _bookService.UpdateBookAsync(id, payload);
+            
                 return Ok($"Book with id = {id} was updated");
             }
         }
     }
-}

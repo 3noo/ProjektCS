@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjecktC.Data;
 using ProjecktC.Data.DTOs;
 using ProjecktC.Data.Models;
+using ProjecktC.Services;
 
 namespace ProjecktC.Controllers
 {
@@ -10,80 +11,57 @@ namespace ProjecktC.Controllers
     
     public class MembershipController:ControllerBase
     {
-        [HttpGet]
-        public IActionResult GetAllMemberships()
+        private IMembershipsServices _membershipsService;
+        public MembershipController(IMembershipsServices membershipsService)
         {
-            var MembershipDb = FDB.MembershipsDb.ToList();
+            _membershipsService = membershipsService;
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetAllMemberships()
+        {
+            var membershipDb = await _membershipsService.GetMembershipsAsync();
             
-            return Ok(MembershipDb);
+            return Ok(membershipDb);
         }
         
         
         [HttpGet("{id}")]
-        public IActionResult GetMembershipsById(int id)
+        public async Task<IActionResult> GetMembershipsById(int id)
         {
-            var MermbershipsDb = FDB.MembershipsDb.FirstOrDefault(x => x.Id == id);
+            var membershipsDb =await _membershipsService.GetMembershipByIdAsync(id);
 
-            if(MermbershipsDb == null)
+            if(membershipsDb == null)
             {
                 return NotFound($"Membership with id = {id} not found");
             } else
             {
-                return Ok(MermbershipsDb);
+                return Ok(membershipsDb);
             }
         }
         
         [HttpDelete("Delete/{id}")]
-        public IActionResult DeleteMembershipById(int id)
+        public async Task<IActionResult> DeleteMembershipById(int id)
         {
-            var MembershipsDb = FDB.MembershipsDb.FirstOrDefault(x => x.Id == id);
-            
-            if(MembershipsDb == null)
-            {
-                return NotFound($"Membership with id = {id} not found");
-            } 
-            else
-            {
-                FDB.MembershipsDb.Remove(MembershipsDb);
+           await _membershipsService.DeleteMembershipByIdAsync(id);
+
                 return Ok($"Membership with id = {id} was removed");
             }
-        }        
         
         [HttpPost]
-        public IActionResult PostMembership([FromBody]PostMembershipDto payload)
+        public async Task<IActionResult> PostMembership([FromBody]PostMembershipDto payload)
         {
-            var newMembership = new Memberships()
-            {
-                Id = new Random().Next(10, 100),
-                FirstName = payload.FirstName,
-                LastName = payload.LastName,
-                Address = payload.Address,
-                Status = payload.Status
-            };
-
-            FDB.MembershipsDb.Add(newMembership);
+            await _membershipsService.PostMembershipAsync(payload);
             
             return Ok("New Membership created");
         }
         
         [HttpPut("{id}")]
-        public IActionResult UpdateMembershipById(int id, [FromBody]PutMembershipDto payload)
+        public async Task<IActionResult> UpdateMembershipById(int id, [FromBody]PutMembershipDto payload)
         {
-            var MembershipsDb = FDB.MembershipsDb.FirstOrDefault(x => x.Id == id);
+           await _membershipsService.UpdateMembershipAsync(id,payload);
 
-            if(MembershipsDb == null)
-            {
-                return NotFound($"Membership with id = {id} not found");
-            } else
-            {
-                MembershipsDb.FirstName = payload.FirstName;
-                MembershipsDb.LastName = payload.LastName;
-                MembershipsDb.Address = payload.Address;
-                MembershipsDb.Status = payload.Status;
-                
 
                 return Ok($"Membership with id = {id} was updated");
             }
         }
     }
-}
